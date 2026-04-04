@@ -384,6 +384,144 @@ body::before {
   color:rgba(255,255,255,0.6);
 }
 
+/* ── SPINNING MONOGRAM RING ── */
+.sf-monogram-wrap {
+  position:relative;
+  width:90px;height:90px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 0.5rem;
+  animation:fadeDown 0.8s ease both;
+}
+.sf-ring-svg {
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  color:var(--blush-deep);
+  animation:spin 30s linear infinite;
+}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.sf-monogram-inner {
+  font-family:var(--font-display);
+  font-size:2.6rem;
+  color:transparent;
+  -webkit-text-stroke:1px var(--blush);
+  position:relative;z-index:1;
+  line-height:1;
+}
+
+/* ── VIEW ALL TABLES BUTTON ── */
+.sf-view-tables-btn {
+  display:flex;align-items:center;gap:0.6rem;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(232,180,184,0.25);
+  border-radius:30px;
+  padding:0.65rem 1.3rem;
+  font-family:var(--font-caps);
+  font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:rgba(255,255,255,0.55);
+  cursor:pointer;
+  transition:all var(--t);
+  margin:0 auto 1.5rem;
+}
+.sf-view-tables-btn:hover {
+  border-color:rgba(232,180,184,0.55);
+  color:var(--blush-light);
+  background:rgba(232,180,184,0.08);
+}
+
+/* ── TABLES OVERLAY ── */
+#tables-overlay {
+  position:fixed;inset:0;z-index:900;
+  background:rgba(26,39,68,0.75);backdrop-filter:blur(10px);
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:fadeOverlay 0.25s ease;
+}
+@keyframes fadeOverlay{from{opacity:0;}to{opacity:1;}}
+@media(min-height:600px){ #tables-overlay{align-items:center;} }
+#tables-overlay.hidden{display:none;}
+
+.tables-panel {
+  background:var(--cream);
+  border-radius:22px 22px 0 0;
+  padding:2rem 1.5rem 2.8rem;
+  width:100%;max-width:580px;
+  max-height:88vh;overflow-y:auto;
+  display:flex;flex-direction:column;gap:1.5rem;
+  box-shadow:0 -10px 40px rgba(0,0,0,0.4);
+  animation:sheetUp 0.35s cubic-bezier(0.32,0.72,0,1);
+}
+@media(min-height:600px){
+  .tables-panel{border-radius:22px;max-height:85vh;}
+}
+.tables-panel-header {
+  display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;
+}
+.tables-eyebrow {
+  font-family:var(--font-caps);
+  font-size:0.6rem;letter-spacing:0.26em;text-transform:uppercase;
+  color:var(--blush-deep);margin-bottom:0.22rem;
+}
+.tables-title {
+  font-family:var(--font-serif);
+  font-weight:400;font-size:1.75rem;
+  color:var(--navy);font-style:italic;
+}
+.tables-close {
+  background:var(--blush-pale);border:1px solid var(--blush-light);
+  border-radius:50%;width:32px;height:32px;
+  font-size:0.75rem;color:var(--ink-muted);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:all var(--t);
+}
+.tables-close:hover{background:var(--blush-light);color:var(--navy);}
+
+.tables-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:1rem;
+}
+@media(max-width:400px){.tables-grid{grid-template-columns:1fr;}}
+
+.table-card {
+  background:var(--white);border:1px solid var(--blush-light);
+  border-radius:12px;overflow:hidden;
+  box-shadow:0 2px 12px var(--shadow-n);
+  animation:cardIn 0.35s ease both;
+}
+.table-card-header {
+  background:var(--navy);padding:0.68rem 1rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.table-card-name {
+  font-family:var(--font-caps);
+  font-size:0.66rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--white);
+}
+.table-card-count {
+  font-family:var(--font-body);font-size:0.64rem;color:rgba(255,255,255,0.6);
+}
+.table-card-guests {
+  padding:0.75rem 1rem;display:flex;flex-direction:column;gap:0.38rem;
+}
+.table-guest-row {
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.28rem 0;border-bottom:1px solid var(--blush-light);
+}
+.table-guest-row:last-child{border-bottom:none;}
+.table-guest-dot{width:5px;height:5px;border-radius:50%;background:var(--blush-deep);flex-shrink:0;}
+.table-guest-name{font-family:var(--font-body);font-size:0.83rem;color:var(--navy);}
+
+.tables-empty{grid-column:1/-1;text-align:center;padding:2rem 0;}
+.tables-empty-icon{font-size:2rem;color:var(--blush-light);margin-bottom:0.6rem;}
+.tables-empty-text{font-family:var(--font-serif);font-style:italic;font-size:1rem;color:var(--ink-muted);}
+
+/* ── COMPANION PILLS — add ✦ prefix via CSS ── */
+.sf-pill {
+  display:flex;align-items:center;gap:0.38rem;
+}
+.sf-pill::before {
+  content:'✦';
+  color:var(--blush-deep);
+  font-size:0.48rem;
+  flex-shrink:0;
+}
+
 /* Utility */
 .hidden{display:none!important;}
 
@@ -401,7 +539,13 @@ body::before {
 
 <!-- HEADER -->
 <header class="sf-header">
-  <div class="sf-monogram">A&amp;R</div>
+  <div class="sf-monogram-wrap">
+    <svg viewBox="0 0 90 90" class="sf-ring-svg" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" stroke-width="0.7" stroke-dasharray="4 3"/>
+      <circle cx="45" cy="45" r="32" fill="none" stroke="currentColor" stroke-width="0.3"/>
+    </svg>
+    <span class="sf-monogram-inner">A&amp;R</span>
+  </div>
   <p class="sf-header-eyebrow">Wedding Reception · May 16, 2026</p>
   <h1 class="sf-header-title">Find Your Seat</h1>
   <p class="sf-header-sub">Villa Caceres Hotel · Naga City</p>
@@ -411,6 +555,15 @@ body::before {
 <main class="sf-main">
 
   <div class="sf-search-wrap">
+    <button class="sf-view-tables-btn" onclick="openTables()">
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="13" height="13">
+        <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+        <rect x="11" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+        <rect x="1" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+        <rect x="11" y="11" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/>
+      </svg>
+      View All Tables
+    </button>
     <p class="sf-instruction">Type your name below to discover<br>your assigned table.</p>
     <div class="sf-search-box">
       <svg class="sf-search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -450,6 +603,20 @@ body::before {
   <div class="sf-footer-logo">Anj & Rod</div>
   <p class="sf-footer-date">May 16, 2026 · Naga City · #AlanibBrucalNuptial</p>
 </footer>
+
+<!-- TABLES OVERLAY -->
+<div id="tables-overlay" class="hidden">
+  <div class="tables-panel">
+    <div class="tables-panel-header">
+      <div>
+        <p class="tables-eyebrow">Seating Arrangement</p>
+        <h2 class="tables-title">All Tables</h2>
+      </div>
+      <button class="tables-close" onclick="closeTables()">✕</button>
+    </div>
+    <div class="tables-grid" id="tables-grid"></div>
+  </div>
+</div>
 
 <!-- ADMIN OVERLAY -->
 <div id="admin-overlay" class="hidden" onclick="adminBackdrop(event)">
@@ -578,6 +745,32 @@ function openAdmin(){document.getElementById('admin-overlay').classList.remove('
 function closeAdmin(){document.getElementById('admin-overlay').classList.add('hidden');}
 function adminBackdrop(e){if(e.target===e.currentTarget)closeAdmin();}
 
+/* ── VIEW ALL TABLES ── */
+function openTables(){renderTables();document.getElementById('tables-overlay').classList.remove('hidden');}
+function closeTables(){document.getElementById('tables-overlay').classList.add('hidden');}
+
+function renderTables(){
+  const grid=document.getElementById('tables-grid');if(!grid)return;
+  if(!guests.length){
+    grid.innerHTML=`<div class="tables-empty"><div class="tables-empty-icon">✦</div><p class="tables-empty-text">No guests added yet</p></div>`;
+    return;
+  }
+  const map={};
+  guests.forEach(g=>{const k=g.table||'Unassigned';if(!map[k])map[k]=[];map[k].push(g.name);});
+  const sorted=Object.keys(map).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  grid.innerHTML=sorted.map((table,i)=>{
+    const names=map[table];
+    const rows=names.map(n=>`<div class="table-guest-row"><div class="table-guest-dot"></div><span class="table-guest-name">${esc(n)}</span></div>`).join('');
+    return `<div class="table-card" style="animation-delay:${i*50}ms">
+      <div class="table-card-header">
+        <span class="table-card-name">${esc(table)}</span>
+        <span class="table-card-count">${names.length} guest${names.length!==1?'s':''}</span>
+      </div>
+      <div class="table-card-guests">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
 function addGuest(){
   const n=document.getElementById('admin-name');
   const t=document.getElementById('admin-table');
@@ -585,9 +778,8 @@ function addGuest(){
   const name=n.value.trim(),table=t.value.trim();
   const companions=c.value.split(',').map(s=>s.trim()).filter(Boolean);
   if(!name||!table){
-    if(!name)n.style.borderColor='#b94040';
-    if(!table)t.style.borderColor='#b94040';
-    setTimeout(()=>{n.style.borderColor='';t.style.borderColor='';},1200);
+    if(!name)flashInvalid(n);
+    if(!table)flashInvalid(t);
     return;
   }
   guests.push({name,table,companions});
@@ -631,6 +823,11 @@ function clearAll(){if(!confirm('Remove all guests? This cannot be undone.'))ret
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+function flashInvalid(el){
+  el.style.borderColor='#b94040';
+  setTimeout(()=>(el.style.borderColor=''),1200);
+}
+
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded',()=>{
   loadGuests();
@@ -646,6 +843,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('sf-clear').classList.add('visible');
     sfSearch();
   }
+
+  // Backdrop click to close tables overlay
+  document.getElementById('tables-overlay').addEventListener('click',(e)=>{
+    if(e.target===e.currentTarget)closeTables();
+  });
 
   // Auto-focus search on load
   setTimeout(()=>document.getElementById('sf-search').focus(), 600);
