@@ -365,25 +365,6 @@ body::before {
 .abtn-close{background:var(--blush-light);border:none;color:var(--navy);}
 .abtn-close:hover{background:var(--blush);}
 
-/* Admin trigger */
-.sf-admin-trigger {
-  display:flex;align-items:center;justify-content:center;
-  margin-top:2.5rem;
-}
-.sf-admin-btn {
-  background:none;border:1px solid rgba(232,180,184,0.25);
-  border-radius:30px;
-  padding:0.55rem 1.2rem;
-  font-family:var(--font-caps);font-size:0.58rem;
-  letter-spacing:0.2em;text-transform:uppercase;
-  color:rgba(255,255,255,0.3);
-  cursor:pointer;transition:all var(--t);
-}
-.sf-admin-btn:hover{
-  border-color:rgba(232,180,184,0.5);
-  color:rgba(255,255,255,0.6);
-}
-
 /* ── SPINNING MONOGRAM RING ── */
 .sf-monogram-wrap {
   position:relative;
@@ -537,7 +518,6 @@ body::before {
 
 <div id="petals-wrap"></div>
 
-<!-- HEADER -->
 <header class="sf-header">
   <div class="sf-monogram-wrap">
     <svg viewBox="0 0 90 90" class="sf-ring-svg" xmlns="http://www.w3.org/2000/svg">
@@ -551,7 +531,6 @@ body::before {
   <p class="sf-header-sub">Villa Caceres Hotel · Naga City</p>
 </header>
 
-<!-- MAIN -->
 <main class="sf-main">
 
   <div class="sf-search-wrap">
@@ -574,7 +553,7 @@ body::before {
         type="text"
         class="sf-input"
         id="sf-search"
-        placeholder="e.g. Maria Santos…"
+        placeholder="Type your name..."
         autocomplete="off"
         autocorrect="off"
         spellcheck="false"
@@ -592,19 +571,13 @@ body::before {
     </div>
   </div>
 
-  <div class="sf-admin-trigger">
-    <button class="sf-admin-btn" onclick="openAdmin()">⚙</button>
-  </div>
-
 </main>
 
-<!-- FOOTER -->
 <footer class="sf-footer">
   <div class="sf-footer-logo">Anj & Rod</div>
   <p class="sf-footer-date">May 16, 2026 · Naga City · #AlanibBrucalNuptial</p>
 </footer>
 
-<!-- TABLES OVERLAY -->
 <div id="tables-overlay" class="hidden">
   <div class="tables-panel">
     <div class="tables-panel-header">
@@ -618,7 +591,6 @@ body::before {
   </div>
 </div>
 
-<!-- ADMIN OVERLAY -->
 <div id="admin-overlay" class="hidden" onclick="adminBackdrop(event)">
   <div class="admin-panel">
     <div class="admin-handle"></div>
@@ -662,7 +634,7 @@ body::before {
   }
 })();
 
-/* ── GUEST DATA ── (shared localStorage key with wedding site) */
+/* ── GUEST DATA ── */
 const STORAGE_KEY='anj_rod_seatfinder_v1';
 let guests=[];
 
@@ -671,7 +643,7 @@ function loadGuests(){
     const raw=localStorage.getItem(STORAGE_KEY);
     guests=raw?JSON.parse(raw):getDefaultGuests();
     if(!raw)saveGuests();
-  }catch{guests=getDefaultGuests();}
+  }catch(e){guests=getDefaultGuests();}
 }
 function saveGuests(){localStorage.setItem(STORAGE_KEY,JSON.stringify(guests));}
 function getDefaultGuests(){
@@ -688,6 +660,17 @@ function sfSearch(){
   const q=document.getElementById('sf-search').value.trim();
   const clear=document.getElementById('sf-clear');
   const area=document.getElementById('sf-results');
+
+  // --- SECRET ADMIN PASSCODE ---
+  if(q.toLowerCase() === "admin123"){
+    document.getElementById('sf-search').value = '';
+    clear.classList.remove('visible');
+    area.innerHTML = `<div class="sf-idle"><div class="sf-idle-icon">A&amp;R</div><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    openAdmin();
+    return;
+  }
+  // -----------------------------
+
   clear.classList.toggle('visible', q.length>0);
   area.innerHTML='';
 
@@ -814,7 +797,7 @@ function importData(e){
       if(!Array.isArray(data))throw new Error();
       guests=data.filter(g=>g.name&&g.table);
       saveGuests();renderAdminList();updateGuestCount();sfSearch();
-    }catch{alert('Import failed — please use a valid JSON file.');}
+    }catch(err){alert('Import failed — please use a valid JSON file.');}
     e.target.value='';
   };
   reader.readAsText(file);
