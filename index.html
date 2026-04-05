@@ -87,15 +87,6 @@ body::before {
   background:linear-gradient(90deg,transparent,var(--blush),transparent);
 }
 
-.sf-monogram {
-  font-family:var(--font-display);
-  font-size:3.2rem;
-  color:transparent;
-  -webkit-text-stroke:1px var(--blush);
-  line-height:1;
-  margin-bottom:0.3rem;
-  animation:fadeDown 0.8s ease both;
-}
 .sf-header-eyebrow {
   font-family:var(--font-caps);
   font-size:0.58rem;letter-spacing:0.4em;text-transform:uppercase;
@@ -251,11 +242,12 @@ body::before {
   text-align:center;padding:3rem 0 1rem;
   animation:fadeUp 0.6s 0.6s ease both;
 }
-.sf-idle-icon {
-  font-family:var(--font-display);
-  font-size:4rem;color:transparent;
-  -webkit-text-stroke:1px rgba(232,180,184,0.3);
-  line-height:1;margin-bottom:0.6rem;
+.sf-idle-img {
+  width:100px;
+  height:auto;
+  margin:0 auto 1.2rem;
+  opacity:0.4;
+  display:block;
 }
 .sf-idle-text {
   font-family:var(--font-serif);font-style:italic;
@@ -365,7 +357,7 @@ body::before {
 .abtn-close{background:var(--blush-light);border:none;color:var(--navy);}
 .abtn-close:hover{background:var(--blush);}
 
-/* ── SPINNING MONOGRAM RING ── */
+/* ── SPINNING MONOGRAM RING & IMAGE ── */
 .sf-monogram-wrap {
   position:relative;
   width:90px;height:90px;
@@ -380,13 +372,12 @@ body::before {
   animation:spin 30s linear infinite;
 }
 @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-.sf-monogram-inner {
-  font-family:var(--font-display);
-  font-size:2.6rem;
-  color:transparent;
-  -webkit-text-stroke:1px var(--blush);
-  position:relative;z-index:1;
-  line-height:1;
+
+.sf-monogram-img {
+  width:55px; /* This fits perfectly inside the inner circle */
+  height:auto;
+  position:relative;
+  z-index:1;
 }
 
 /* ── VIEW ALL TABLES BUTTON ── */
@@ -524,7 +515,7 @@ body::before {
       <circle cx="45" cy="45" r="40" fill="none" stroke="currentColor" stroke-width="0.7" stroke-dasharray="4 3"/>
       <circle cx="45" cy="45" r="32" fill="none" stroke="currentColor" stroke-width="0.3"/>
     </svg>
-    <span class="sf-monogram-inner">A&amp;R</span>
+    <img src="mono.png" alt="A&R" class="sf-monogram-img">
   </div>
   <p class="sf-header-eyebrow">Wedding Reception · May 16, 2026</p>
   <h1 class="sf-header-title">Find Your Seat</h1>
@@ -566,7 +557,7 @@ body::before {
 
   <div class="sf-results" id="sf-results">
     <div class="sf-idle">
-      <div class="sf-idle-icon">A&amp;R</div>
+      <img src="mono.png" alt="A&R" class="sf-idle-img">
       <p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p>
     </div>
   </div>
@@ -665,7 +656,7 @@ function sfSearch(){
   if(q.toLowerCase() === "admin123"){
     document.getElementById('sf-search').value = '';
     clear.classList.remove('visible');
-    area.innerHTML = `<div class="sf-idle"><div class="sf-idle-icon">A&amp;R</div><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    area.innerHTML = `<div class="sf-idle"><img src="659066109_856702817453506_9106543565714017691_n-removebg-preview.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
     openAdmin();
     return;
   }
@@ -675,7 +666,7 @@ function sfSearch(){
   area.innerHTML='';
 
   if(!q){
-    area.innerHTML=`<div class="sf-idle"><div class="sf-idle-icon">A&amp;R</div><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    area.innerHTML=`<div class="sf-idle"><img src="659066109_856702817453506_9106543565714017691_n-removebg-preview.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
     return;
   }
 
