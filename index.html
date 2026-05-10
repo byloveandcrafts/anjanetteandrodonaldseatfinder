@@ -497,6 +497,17 @@ body::before {
 /* Utility */
 .hidden{display:none!important;}
 
+/* ── FIREBASE STATUS DOT ── */
+.fb-status {
+  position:fixed;top:14px;right:14px;z-index:999;
+  width:9px;height:9px;border-radius:50%;
+  transition:background 0.4s ease, box-shadow 0.4s ease;
+}
+.fb-status.synced  { background:#6fcf97; box-shadow:0 0 6px rgba(111,207,151,0.7); }
+.fb-status.syncing { background:#f2c94c; box-shadow:0 0 6px rgba(242,201,76,0.7); animation:pulse 0.9s infinite; }
+.fb-status.offline { background:#eb5757; box-shadow:0 0 6px rgba(235,87,87,0.7); }
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
 @media(max-width:480px){
   .sf-main{padding:2rem 1.2rem 3.5rem;}
   .sf-card-top{padding:1.2rem 1.4rem 1rem;}
@@ -508,6 +519,7 @@ body::before {
 <body>
 
 <div id="petals-wrap"></div>
+<div id="fb-status" class="fb-status syncing" title="Connecting to Firebase…"></div>
 
 <header class="sf-header">
   <div class="sf-monogram-wrap">
@@ -612,7 +624,27 @@ body::before {
   </div>
 </div>
 
-<script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ── FIREBASE CONFIG ── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBJbmCbFFHZjVinztPNYgh32jcgmsyFy0A",
+  authDomain: "anj-and-rod.firebaseapp.com",
+  databaseURL: "https://anj-and-rod-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "anj-and-rod",
+  storageBucket: "anj-and-rod.firebasestorage.app",
+  messagingSenderId: "894875170785",
+  appId: "1:894875170785:web:c366c832079ade268cc4a0",
+  measurementId: "G-882FXEX5EQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const GUESTS_REF = ref(db, 'guests');
+
 /* ── PETALS ── */
 (function(){
   const wrap=document.getElementById('petals-wrap');
@@ -626,17 +658,10 @@ body::before {
 })();
 
 /* ── GUEST DATA ── */
-const STORAGE_KEY='anj_rod_seatfinder_v1';
 let guests=[];
+let fbKeys=[]; // Firebase push keys for each guest (parallel array)
+let dbLoaded=false;
 
-function loadGuests(){
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    guests=raw?JSON.parse(raw):getDefaultGuests();
-    if(!raw)saveGuests();
-  }catch(e){guests=getDefaultGuests();}
-}
-function saveGuests(){localStorage.setItem(STORAGE_KEY,JSON.stringify(guests));}
 function getDefaultGuests(){
   return[
     {name:"Anjanette Alanib",table:"Bridal Table",companions:["Rodonald Brucal","Krissha Anne Alanib","Julius Patrick Carpo"]},
@@ -646,6 +671,85 @@ function getDefaultGuests(){
   ];
 }
 
+/* Show/hide Firebase sync status indicator */
+function setStatus(state){
+  const el=document.getElementById('fb-status');
+  if(!el)return;
+  el.className='fb-status '+state;
+  el.title={synced:'Synced with Firebase',syncing:'Syncing…',offline:'Offline – changes saved locally'}[state]||'';
+}
+
+/* Convert Firebase snapshot object → arrays */
+function snapshotToGuests(data){
+  guests=[];fbKeys=[];
+  if(!data)return;
+  Object.keys(data).forEach(k=>{
+    fbKeys.push(k);
+    guests.push(data[k]);
+  });
+}
+
+/* ── REALTIME LISTENER ── listen for any change from any device ── */
+function startRealtimeSync(){
+  onValue(GUESTS_REF,(snapshot)=>{
+    snapshotToGuests(snapshot.val());
+    dbLoaded=true;
+    setStatus('synced');
+    renderAdminList();
+    updateGuestCount();
+    sfSearch(); // refresh search results live
+    if(document.getElementById('tables-overlay')&&!document.getElementById('tables-overlay').classList.contains('hidden')){
+      renderTables();
+    }
+  },(err)=>{
+    console.warn('Firebase read error, falling back to localStorage',err);
+    setStatus('offline');
+    loadLocalFallback();
+  });
+}
+
+/* ── SAVE to Firebase (full overwrite of a guest by index) ── */
+async function saveGuests(){
+  setStatus('syncing');
+  try{
+    // Write full list as keyed object
+    const obj={};
+    guests.forEach((g,i)=>{
+      const k=fbKeys[i]||push(GUESTS_REF).key;
+      fbKeys[i]=k;
+      obj[k]=g;
+    });
+    await set(GUESTS_REF,Object.keys(obj).length?obj:null);
+    setStatus('synced');
+  }catch(err){
+    console.warn('Firebase write failed, saving to localStorage',err);
+    setStatus('offline');
+    localStorage.setItem('anj_rod_seatfinder_v1',JSON.stringify(guests));
+  }
+}
+
+/* ── LOCAL FALLBACK ── */
+function loadLocalFallback(){
+  try{
+    const raw=localStorage.getItem('anj_rod_seatfinder_v1');
+    guests=raw?JSON.parse(raw):getDefaultGuests();
+    fbKeys=guests.map(()=>null);
+  }catch(e){guests=getDefaultGuests();fbKeys=[];}
+  renderAdminList();updateGuestCount();sfSearch();
+}
+
+/* ── SEED default guests if DB is empty ── */
+async function seedIfEmpty(){
+  try{
+    const snap=await get(GUESTS_REF);
+    if(!snap.exists()){
+      guests=getDefaultGuests();
+      fbKeys=guests.map(()=>null);
+      await saveGuests();
+    }
+  }catch(e){/* handled by onValue error */}
+}
+
 /* ── SEARCH ── */
 function sfSearch(){
   const q=document.getElementById('sf-search').value.trim();
@@ -653,20 +757,25 @@ function sfSearch(){
   const area=document.getElementById('sf-results');
 
   // --- SECRET ADMIN PASSCODE ---
-  if(q.toLowerCase() === "admin123"){
-    document.getElementById('sf-search').value = '';
+  if(q.toLowerCase()==="admin123"){
+    document.getElementById('sf-search').value='';
     clear.classList.remove('visible');
-    area.innerHTML = `<div class="sf-idle"><img src="659066109_856702817453506_9106543565714017691_n-removebg-preview.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    area.innerHTML=`<div class="sf-idle"><img src="mono.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
     openAdmin();
     return;
   }
   // -----------------------------
 
-  clear.classList.toggle('visible', q.length>0);
+  clear.classList.toggle('visible',q.length>0);
   area.innerHTML='';
 
   if(!q){
-    area.innerHTML=`<div class="sf-idle"><img src="659066109_856702817453506_9106543565714017691_n-removebg-preview.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    area.innerHTML=`<div class="sf-idle"><img src="mono.png" alt="A&R" class="sf-idle-img"><p class="sf-idle-text">Begin typing your name to find<br>your place at our table.</p></div>`;
+    return;
+  }
+
+  if(!dbLoaded){
+    area.innerHTML=`<div class="sf-empty"><div class="sf-empty-icon">✦</div><p class="sf-empty-text" style="font-size:0.9rem;opacity:0.6;">Loading guest list…</p></div>`;
     return;
   }
 
@@ -745,7 +854,7 @@ function renderTables(){
   }).join('');
 }
 
-function addGuest(){
+async function addGuest(){
   const n=document.getElementById('admin-name');
   const t=document.getElementById('admin-table');
   const c=document.getElementById('admin-companions');
@@ -756,11 +865,43 @@ function addGuest(){
     if(!table)flashInvalid(t);
     return;
   }
-  guests.push({name,table,companions});
-  saveGuests();renderAdminList();updateGuestCount();sfSearch();
+  // Push to Firebase directly (onValue will update local state)
+  try{
+    setStatus('syncing');
+    const newRef=push(GUESTS_REF);
+    await set(newRef,{name,table,companions});
+    setStatus('synced');
+  }catch(err){
+    console.warn('Firebase push failed',err);
+    guests.push({name,table,companions});
+    fbKeys.push(null);
+    await saveGuests();
+    renderAdminList();updateGuestCount();sfSearch();
+  }
   n.value='';t.value='';c.value='';n.focus();
 }
-function deleteGuest(i){guests.splice(i,1);saveGuests();renderAdminList();updateGuestCount();sfSearch();}
+
+async function deleteGuest(i){
+  const key=fbKeys[i];
+  if(key){
+    try{
+      setStatus('syncing');
+      await remove(ref(db,'guests/'+key));
+      setStatus('synced');
+      // onValue will update local state automatically
+    }catch(err){
+      console.warn('Firebase remove failed',err);
+      guests.splice(i,1);fbKeys.splice(i,1);
+      await saveGuests();
+      renderAdminList();updateGuestCount();sfSearch();
+    }
+  }else{
+    guests.splice(i,1);fbKeys.splice(i,1);
+    await saveGuests();
+    renderAdminList();updateGuestCount();sfSearch();
+  }
+}
+
 function renderAdminList(){
   const list=document.getElementById('admin-list');if(!list)return;
   if(!guests.length){list.innerHTML=`<p style="font-size:0.8rem;color:var(--ink-muted);padding:0.5rem 0">No guests added yet.</p>`;return;}
@@ -773,27 +914,47 @@ function renderAdminList(){
       <button class="btn-del" onclick="deleteGuest(${i})">✕</button>
     </div>`).join('');
 }
+
 function updateGuestCount(){const el=document.getElementById('guest-count');if(el)el.textContent=`(${guests.length})`;}
+
 function exportData(){
   const blob=new Blob([JSON.stringify(guests,null,2)],{type:'application/json'});
   const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'wedding-guests.json'});
   a.click();URL.revokeObjectURL(a.href);
 }
-function importData(e){
+
+async function importData(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=(ev)=>{
+  reader.onload=async(ev)=>{
     try{
       const data=JSON.parse(ev.target.result);
       if(!Array.isArray(data))throw new Error();
-      guests=data.filter(g=>g.name&&g.table);
-      saveGuests();renderAdminList();updateGuestCount();sfSearch();
+      const clean=data.filter(g=>g.name&&g.table);
+      // Write entire list to Firebase
+      setStatus('syncing');
+      const obj={};
+      clean.forEach(g=>{obj[push(GUESTS_REF).key]=g;});
+      await set(GUESTS_REF,Object.keys(obj).length?obj:null);
+      setStatus('synced');
     }catch(err){alert('Import failed — please use a valid JSON file.');}
     e.target.value='';
   };
   reader.readAsText(file);
 }
-function clearAll(){if(!confirm('Remove all guests? This cannot be undone.'))return;guests=[];saveGuests();renderAdminList();updateGuestCount();sfSearch();}
+
+async function clearAll(){
+  if(!confirm('Remove all guests? This cannot be undone.'))return;
+  try{
+    setStatus('syncing');
+    await set(GUESTS_REF,null);
+    setStatus('synced');
+  }catch(err){
+    guests=[];fbKeys=[];
+    await saveGuests();
+    renderAdminList();updateGuestCount();sfSearch();
+  }
+}
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -802,11 +963,18 @@ function flashInvalid(el){
   setTimeout(()=>(el.style.borderColor=''),1200);
 }
 
+/* ── Expose functions to global scope (needed for inline onclick) ── */
+window.sfSearch=sfSearch;window.sfClear=sfClear;window.sfKey=sfKey;
+window.openAdmin=openAdmin;window.closeAdmin=closeAdmin;window.adminBackdrop=adminBackdrop;
+window.openTables=openTables;window.closeTables=closeTables;
+window.addGuest=addGuest;window.deleteGuest=deleteGuest;
+window.exportData=exportData;window.importData=importData;window.clearAll=clearAll;
+
 /* ── INIT ── */
-document.addEventListener('DOMContentLoaded',()=>{
-  loadGuests();
-  renderAdminList();
-  updateGuestCount();
+document.addEventListener('DOMContentLoaded',async()=>{
+  setStatus('syncing');
+  await seedIfEmpty();
+  startRealtimeSync();
 
   // Prefill from URL param ?name=...
   const params=new URLSearchParams(window.location.search);
@@ -824,7 +992,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 
   // Auto-focus search on load
-  setTimeout(()=>document.getElementById('sf-search').focus(), 600);
+  setTimeout(()=>document.getElementById('sf-search').focus(),600);
 });
 </script>
 </body>
